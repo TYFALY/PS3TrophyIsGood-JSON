@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -6,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
+using Newtonsoft.Json;
 using TROPHYParser;
 
 namespace PS3TrophyIsGood
@@ -53,6 +55,9 @@ namespace PS3TrophyIsGood
             Thread.CurrentThread.CurrentCulture = curinfo;
             Thread.CurrentThread.CurrentUICulture = curinfo;
             InitializeComponent();
+            SetJsonMenuItemsEnabled(false);
+            exportTrophiesToolStripMenuItem.Enabled = false;
+            importTrophiesToolStripMenuItem.Enabled = false;
             toolStripComboBox1.SelectedIndexChanged -= toolStripComboBox1_SelectedIndexChanged;
             toolStripComboBox1.SelectedIndex = Properties.Settings.Default.Language;
             toolStripComboBox1.SelectedIndexChanged += toolStripComboBox1_SelectedIndexChanged;
@@ -63,33 +68,61 @@ namespace PS3TrophyIsGood
             toolStripComboBox2.SelectedIndex = 0;
             dateTimePicker1.CustomFormat = Properties.strings.DateFormatString;
             copyFrom = new CopyFrom();
-            // 啟用proxy
-            process = new Process
+            // 啟用proxy - start flaresolverr if available, but don't crash the app when missing or fails
+            try
             {
-                StartInfo = new ProcessStartInfo
+                var exePath = Path.Combine(Application.StartupPath, "flaresolverr", "flaresolverr.exe");
+                var workDir = Path.Combine(Application.StartupPath, "flaresolverr");
+                if (File.Exists(exePath))
                 {
-                    FileName = "flaresolverr/flaresolverr.exe",
-                    WorkingDirectory = "flaresolverr",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                },
-            };
-            process.OutputDataReceived += (sender, e) =>
-            {
-                if (e.Data != null)
-                {
-                    Console.WriteLine(e.Data);
-                    if (e.Data.Contains("Serving on"))
+                    process = new Process
                     {
-                        Utility.servingReady.Set(); // 觸發事件，表示已準備好
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = exePath,
+                            WorkingDirectory = workDir,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true,
+                        },
+                    };
+                    process.OutputDataReceived += (sender, e) =>
+                    {
+                        if (e.Data != null)
+                        {
+                            Console.WriteLine(e.Data);
+                            if (e.Data.Contains("Serving on"))
+                            {
+                                Utility.servingReady.Set(); // 觸發事件，表示已準備好
+                            }
+                        }
+                    };
+
+                    try
+                    {
+                        process.Start();
+                        process.BeginOutputReadLine();
+                    }
+                    catch (Exception ex)
+                    {
+                        // If flaresolverr fails to start, log and continue without crashing the app
+                        Console.WriteLine("Failed to start flaresolverr: " + ex.Message);
+                        try { process?.Dispose(); } catch { }
+                        process = null;
                     }
                 }
-            };
-
-            process.Start();
-            process.BeginOutputReadLine();
+                else
+                {
+                    Console.WriteLine("flaresolverr executable not found: " + exePath);
+                    process = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error initializing flaresolverr process: " + ex.Message);
+                process = null;
+            }
         }
 
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -438,6 +471,208 @@ namespace PS3TrophyIsGood
             SaveFile();
         }
 
+        private void SetJsonMenuItemsEnabled(bool enabled)
+        {
+            exportTrophiesToolStripMenuItem.Enabled = enabled;
+            importTrophiesToolStripMenuItem.Enabled = enabled;
+        }
+
+        private int FindTrophyIndex(TrophyDto trophy)
+        {
+            if (trophy == null)
+            {
+                return -1;
+            }
+
+            if (trophy.Id >= 0 && trophy.Id < tconf.Count)
+            {
+                return trophy.Id;
+            }
+
+            for (int i = 0; i < tconf.Count; i++)
+            {
+                if (string.Equals(tconf[i].name, trophy.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private void ExportTrophiesToJsonToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            /*
+             * LLM workflow example:
+             * 1. Export this JSON file and open it in Claude or GPT.
+             * 2. Ask the model to generate realistic unlock timestamps for the unlocked trophies.
+             * 3. Keep the same Id or Name values, update only Timestamp and Unlocked when needed, and import the file back.
+             *
+             * Example JSON structure:
+             * [
+             *   {
+             *     "Id": 0,
+             *     "Name": "Platinum Trophy",
+             *     "Unlocked": true,
+             *     "Timestamp": "2024-05-01 20:15:30"
+             *   },
+             *   {
+             *     "Id": 1,
+             *     "Name": "Bronze Trophy",
+             *     "Unlocked": false,
+             *     "Timestamp": "0001-01-01 00:00:00"
+             *   }
+             * ]
+             *
+             * Tips:
+             * - Prefer the exact timestamp format: yyyy-MM-dd HH:mm:ss
+             * - Use realistic chronological order for the timestamps.
+             * - Keep Id and Name stable so the import can match trophies safely.
+             */
+            if (!isOpen || tconf == null || tpsn == null || tusr == null)
+            {
+                MessageBox.Show("Please open a trophy folder before exporting trophies.", "Export trophies", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var dialog = new SaveFileDialog
+            {
+                Filter = "JSON Files|*.json",
+                DefaultExt = "json",
+                FileName = string.IsNullOrWhiteSpace(tconf.title_name) ? "trophies.json" : tconf.title_name + ".json"
+            })
+            {
+                if (dialog.ShowDialog(this) == DialogResult.OK)
+                {
+                    try
+                    {
+                        var trophies = new List<TrophyDto>();
+                        for (int i = 0; i < tconf.Count; i++)
+                        {
+                            var dto = new TrophyDto
+                            {
+                                Id = i,
+                                Name = tconf[i].name,
+                                Unlocked = IsTrophyGot(i),
+                                Timestamp = DateTime.MinValue
+                            };
+
+                            if (dto.Unlocked)
+                            {
+                                dto.Timestamp = tpsn[i].HasValue ? tpsn[i].Value.Time : tusr.trophyTimeInfoTable[i].Time;
+                            }
+
+                            trophies.Add(dto);
+                        }
+
+                        var settings = new JsonSerializerSettings
+                        {
+                            Formatting = Formatting.Indented,
+                            Culture = CultureInfo.InvariantCulture
+                        };
+
+                        File.WriteAllText(dialog.FileName, JsonConvert.SerializeObject(trophies, settings));
+                        MessageBox.Show("Trophies exported to JSON successfully.", "Export trophies", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Unable to export trophies to JSON.\n\n" + ex.Message, "Export trophies", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
+        private void ImportTrophiesFromJsonToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            // LLM workflow: import a previously exported JSON file to restore or update trophy status with safe matching.
+            if (!isOpen || tconf == null || tpsn == null || tusr == null)
+            {
+                MessageBox.Show("Please open a trophy folder before importing trophies.", "Import trophies", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            using (var dialog = new OpenFileDialog
+            {
+                Filter = "JSON Files|*.json",
+                DefaultExt = "json"
+            })
+            {
+                if (dialog.ShowDialog(this) == DialogResult.OK)
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(dialog.FileName);
+                        var settings = new JsonSerializerSettings
+                        {
+                            Culture = CultureInfo.InvariantCulture,
+                            DateParseHandling = DateParseHandling.DateTime,
+                            DateTimeZoneHandling = DateTimeZoneHandling.Unspecified
+                        };
+                        var trophies = JsonConvert.DeserializeObject<List<TrophyDto>>(json, settings);
+
+                        if (trophies == null || trophies.Count == 0)
+                        {
+                            MessageBox.Show("The selected file does not contain any trophy data.", "Import trophies", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            return;
+                        }
+
+                        int matchedCount = 0;
+                        foreach (var trophy in trophies)
+                        {
+                            if (trophy == null)
+                            {
+                                continue;
+                            }
+
+                            int trophyIndex = FindTrophyIndex(trophy);
+                            if (trophyIndex < 0)
+                            {
+                                continue;
+                            }
+
+                            matchedCount++;
+                            var lvi = listViewEx1.Items[trophyIndex];
+                            var selectedTime = trophy.Timestamp == DateTime.MinValue ? DateTime.Now : trophy.Timestamp;
+
+                            if (trophy.Unlocked)
+                            {
+                                if (!IsTrophyGot(trophyIndex))
+                                {
+                                    UnlockTrophy(trophyIndex, selectedTime, lvi);
+                                }
+                                else
+                                {
+                                    ChangeTrophyTime(trophyIndex, selectedTime, lvi);
+                                }
+                            }
+                            else if (IsTrophyGot(trophyIndex))
+                            {
+                                DeleteTrophy(trophyIndex, lvi);
+                            }
+                        }
+
+                        RefreshComponents();
+                        if (matchedCount == 0)
+                        {
+                            MessageBox.Show("No trophies could be matched from the selected JSON file.", "Import trophies", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        else
+                        {
+                            MessageBox.Show(string.Format("Imported {0} trophy entries from JSON.", matchedCount), "Import trophies", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        MessageBox.Show("The selected file is not valid JSON or does not match the expected trophy format.", "Import trophies", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Unable to import trophies from JSON.\n\n" + ex.Message, "Import trophies", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+            }
+        }
+
         private void 關閉檔案CToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CloseFile();
@@ -477,6 +712,7 @@ namespace PS3TrophyIsGood
 
                 RefreshComponents();
                 isOpen = true;
+                SetJsonMenuItemsEnabled(true);
                 重新整理ToolStripMenuItem.Enabled = true;
                 進階ToolStripMenuItem.Enabled = true;
             }
@@ -551,6 +787,7 @@ namespace PS3TrophyIsGood
             haveBeenEdited = false;
             重新整理ToolStripMenuItem.Enabled = false;
             進階ToolStripMenuItem.Enabled = false;
+            SetJsonMenuItemsEnabled(false);
             isOpen = false;
             EmptyAllComponents();
             if (!string.IsNullOrEmpty(pathTemp))

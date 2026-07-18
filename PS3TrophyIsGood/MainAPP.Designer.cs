@@ -6,6 +6,8 @@
         /// 設計工具所需的變數。
         /// </summary>
         private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.ToolStripMenuItem exportTrophiesToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem importTrophiesToolStripMenuItem;
 
         /// <summary>
         /// 清除任何使用中的資源。
@@ -37,6 +39,8 @@
             this.開啟ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.存檔ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.關閉檔案CToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.exportTrophiesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.importTrophiesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.isRpcs3Format = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.關閉ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -100,6 +104,8 @@
             this.開啟ToolStripMenuItem,
             this.存檔ToolStripMenuItem,
             this.關閉檔案CToolStripMenuItem,
+            this.exportTrophiesToolStripMenuItem,
+            this.importTrophiesToolStripMenuItem,
             this.isRpcs3Format,
             this.toolStripSeparator1,
             this.關閉ToolStripMenuItem});
@@ -123,6 +129,22 @@
             this.關閉檔案CToolStripMenuItem.Name = "關閉檔案CToolStripMenuItem";
             resources.ApplyResources(this.關閉檔案CToolStripMenuItem, "關閉檔案CToolStripMenuItem");
             this.關閉檔案CToolStripMenuItem.Click += new System.EventHandler(this.關閉檔案CToolStripMenuItem_Click);
+            // 
+            // exportTrophiesToolStripMenuItem
+            // 
+            this.exportTrophiesToolStripMenuItem.Name = "exportTrophiesToolStripMenuItem";
+            this.exportTrophiesToolStripMenuItem.Text = "Export Trophies to JSON";
+            this.exportTrophiesToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
+            this.exportTrophiesToolStripMenuItem.ShowShortcutKeys = true;
+            this.exportTrophiesToolStripMenuItem.Click += new System.EventHandler(this.ExportTrophiesToJsonToolStripMenuItem_Click);
+            // 
+            // importTrophiesToolStripMenuItem
+            // 
+            this.importTrophiesToolStripMenuItem.Name = "importTrophiesToolStripMenuItem";
+            this.importTrophiesToolStripMenuItem.Text = "Import Trophies from JSON";
+            this.importTrophiesToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
+            this.importTrophiesToolStripMenuItem.ShowShortcutKeys = true;
+            this.importTrophiesToolStripMenuItem.Click += new System.EventHandler(this.ImportTrophiesFromJsonToolStripMenuItem_Click);
             // 
             // isRpcs3Format
             // 

@@ -95,6 +95,7 @@
       <DependentUpon>MainAPP.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="TrophyDto.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\strings.pt-BR.Designer.cs">
       <DependentUpon>strings.pt-BR.resx</DependentUpon>
@@ -216,6 +217,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces">
       <Version>10.0.0-rc.2.25502.107</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>13.0.3</Version>
     </PackageReference>
     <PackageReference Include="System.Buffers">
       <Version>4.6.1</Version>
