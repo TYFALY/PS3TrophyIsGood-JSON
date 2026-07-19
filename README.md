@@ -34,7 +34,7 @@ This repository is a lightweight fork of **PS3TrophyIsGood** by **darkautism**.
 
 The **only functional addition** is support for **JSON Export** and **JSON Import**, allowing trophy data to be edited outside the application before being imported back.
 
-Everything else—including **trophy editing**, **timestamp editing**, **RPCS3 support**, **trophy resigning**, **Smart Copy**, and **multi-language support**—comes directly from the original project.
+Everything else including **trophy editing**, **timestamp editing**, **RPCS3 support**, **trophy resigning**, **Smart Copy**, and **multi-language support** comes directly from the original project.
 
 This fork is intended as a small quality-of-life improvement for users who want a simpler workflow for manual editing, automation, or AI-assisted trophy timestamp generation.
 
