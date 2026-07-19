@@ -1,37 +1,42 @@
 <div align="center">
 
-# PS3TrophyIsGood - JSON Edition
+# PS3TrophyIsGood — JSON Edition
 
-A small extension to **PS3TrophyIsGood** that adds JSON import and export support for AI-assisted trophy timestamp editing.
+A lightweight fork of **PS3TrophyIsGood** that adds **JSON Export** and **JSON Import**, making it easy to edit trophy data manually or with AI assistants like **ChatGPT**, **Claude**, **Gemini**, and **DeepSeek**.
 
-![Demo](http://4.bp.blogspot.com/-dMj1nom1pKc/USnCAcmDu6I/AAAAAAAADWg/UFiD6o3uguU/s1600/t1.png)
+<img width="800" height="450" alt="ezgif-38079738afa29035" src="https://github.com/user-attachments/assets/b50c400f-6f04-4b0e-8edb-481ad889c444" />
+
+⭐ **If you find this project useful, consider leaving a star!**
 
 </div>
 
+---
+
 ## ✨ What's New
 
-This edition adds a simple JSON workflow to the original project.
+This fork introduces a simple JSON workflow while preserving every feature from the original project.
 
-- 📤 **Export to JSON**
-  - Export trophy information (ID, Name, Unlock Status, Timestamp) to a JSON file.
+| Feature | Description |
+|:--|:--|
+| 📤 **Export to JSON** | Export trophy data to an editable JSON file. |
+| 📥 **Import from JSON** | Import edited JSON files back into the application. |
+| 🤖 **AI Friendly** | Generate realistic trophy timestamps using ChatGPT, Claude, Gemini, DeepSeek, or any LLM. |
+| 📝 **Manual Editing** | Edit trophy data in any JSON editor before importing it back. |
 
-- 📥 **Import from JSON**
-  - Import edited JSON files back into the application.
-
-- 🤖 **LLM-Friendly**
-  - Makes it easy to use ChatGPT, Claude, Gemini, or other LLMs to generate realistic trophy timestamps.
+> [!TIP]
+> The JSON format is designed to work seamlessly with both AI assistants and manual editing, making trophy timestamp customization significantly easier.
 
 ---
 
 ## 📖 About
 
-This repository is based on the original **PS3TrophyIsGood** project by **darkautism**.
+This repository is a lightweight fork of **PS3TrophyIsGood** by **darkautism**.
 
-The only functional addition in this version is JSON export/import support, allowing trophy data to be edited externally before importing it back into the application.
+The **only functional addition** is support for **JSON Export** and **JSON Import**, allowing trophy data to be edited outside the application before being imported back.
 
-All original trophy editing functionality comes from the original project.
+Everything else—including **trophy editing**, **timestamp editing**, **RPCS3 support**, **trophy resigning**, **Smart Copy**, and **multi-language support**—comes directly from the original project.
 
----
+This fork is intended as a small quality-of-life improvement for users who want a simpler workflow for manual editing, automation, or AI-assisted trophy timestamp generation.
 
 ## 🚀 Building
 
